@@ -1,6 +1,7 @@
 import os
 
 from pydoc import classname
+from urllib import response
 from dash import Dash, html, dcc, dash_table, Input, Output, ctx, exceptions
 from dotenv import load_dotenv
 from pathlib import Path
@@ -27,11 +28,11 @@ snowflake = SnowflakeHandler(connection_parameters)
 
 snowflake.init_session()
 
-df = pandas.DataFrame(snowflake.get_table_data('<your_table_name>'))
+df = pandas.DataFrame(snowflake.get_table_data('<your-table-name>'))
 
 snowflake.close_session()
 
-app = Dash(external_stylesheets=[dbc.themes.LUX])
+app = Dash(title='Snowpark Dash App', external_stylesheets=[dbc.themes.LUX])
 
 app.layout = html.Div([
     html.Div([
@@ -50,24 +51,44 @@ app.layout = html.Div([
         ),
         html.Br(),
         html.Button('Submit', 'submit-button', className='btn btn-primary'),
-        html.Div('', 'display-div')
+        html.Br(),
+        html.Br(),
+        html.Div('', 'display-div', className="alert alert-success", style= {'display': 'none'})
     ], className='container')
 ])
 
 @app.callback(
     Output('display-div', 'children'),
+    Output('display-div', 'className'),
+    Output('display-div', 'style'),
     Input('data-table', 'data'),
     Input('submit-button', 'n_clicks'),
     prevent_initial_call=True
 )
 def show(data, n_clicks):
-
+    
     if ctx.triggered_id == 'submit-button':
-        print('Submitted')
+
+        snowflake = SnowflakeHandler(connection_parameters)
+
+        snowflake.init_session()
+
+        response = snowflake.save_table_data(data, '<your-table-name>', 'overwrite')
+
+        snowflake.close_session()
+
+        if response['status'] == 'success':
+
+            return response['message'], 'alert alert-success', {'display': 'block'}
+
+        elif response['status'] == 'error':
+
+            return response['message'], 'alert alert-danger', {'display': 'block'}
+
     elif ctx.triggered_id == 'data-table':
         raise exceptions.PreventUpdate
 
-    return str(data)
+    return None, None, None
 
 if __name__ == '__main__':
     app.run_server(debug=True)
