@@ -1,6 +1,7 @@
 import os
 
 from pydoc import classname
+from turtle import width
 from urllib import response
 from dash import Dash, html, dcc, dash_table, Input, Output, ctx, exceptions
 from dotenv import load_dotenv
@@ -30,6 +31,14 @@ snowflake.init_session()
 
 df = pandas.DataFrame(snowflake.get_table_data('<your-table-name>'))
 
+schemas = snowflake.get_schemas_by_database('<your-database>')
+
+df_schemas = pandas.DataFrame(schemas)['name']
+
+tables = snowflake.get_tables_by_schema('<your-schema>')
+
+df_tables = pandas.DataFrame(tables)['name']
+
 snowflake.close_session()
 
 app = Dash(title='Snowpark Dash App', external_stylesheets=[dbc.themes.LUX])
@@ -42,18 +51,30 @@ app.layout = html.Div([
     ], className='container'),
     html.Hr(),
     html.Div([
-        html.H5('Your table'),
-        dash_table.DataTable(
-            id='data-table',
-            data=df.to_dict('records'),
-            columns=[{'id': i, 'name': i} for i in df.columns],
-            editable=True
-        ),
+         html.Div([
+            html.H5('Select you schema:'),
+            dcc.Dropdown(df_schemas)
+        ]),
         html.Br(),
-        html.Button('Submit', 'submit-button', className='btn btn-primary'),
+        html.Div([
+            html.H5('Select you table:'),
+            dcc.Dropdown(df_tables)
+        ]),
         html.Br(),
-        html.Br(),
-        html.Div('', 'display-div', className="alert alert-success", style= {'display': 'none'})
+        html.Div([
+            html.H5('Your table'),
+            dash_table.DataTable(
+                id='data-table',
+                data=df.to_dict('records'),
+                columns=[{'id': i, 'name': i} for i in df.columns],
+                editable=True
+            ),
+            html.Br(),
+            html.Button('Submit', 'submit-button', className='btn btn-primary'),
+            html.Br(),
+            html.Br(),
+            html.Div('', 'display-div', className="alert alert-success", style= {'display': 'none'})
+        ])
     ], className='container')
 ])
 

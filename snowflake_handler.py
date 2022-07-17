@@ -13,6 +13,14 @@ class SnowflakeHandler:
     def close_session(self):
         self.session.close()
 
+    def get_schemas_by_database(self, database):
+
+        return self.session.sql(f'show schemas in database {database}').collect()
+
+    def get_tables_by_schema(self, schema):
+
+        return self.session.sql(f'show tables in schema {schema}').collect()
+
     def get_table_data(self, table_name):
 
         return self.session.table(table_name).collect()
