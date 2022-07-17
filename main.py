@@ -1,12 +1,37 @@
+import os
+
 from pydoc import classname
 from dash import Dash, html, dcc, dash_table, Input, Output, ctx, exceptions
+from dotenv import load_dotenv
+from pathlib import Path
+from snowflake_handler import SnowflakeHandler
 
 import dash_bootstrap_components as dbc
 import pandas
 
-app = Dash(external_stylesheets=[dbc.themes.LUX])
+# Setting env path
+dotenv_path = Path('../.env')
+load_dotenv(dotenv_path=dotenv_path)
 
-df = pandas.DataFrame([{'id': i, 'name': f'Test {i}'} for i in range(0,11)])
+connection_parameters = {
+    "account": os.getenv('ACCOUNT'),
+    "user": os.getenv('USER'),
+    "password": os.getenv('PASS'),
+    "role": os.getenv('ROLE'),
+    "warehouse": os.getenv('WAREHOUSE'),
+    "database": os.getenv('DATABASE'),
+    "schema": os.getenv('SCHEMA')
+}    
+
+snowflake = SnowflakeHandler(connection_parameters)
+
+snowflake.init_session()
+
+df = pandas.DataFrame(snowflake.get_table_data('<your_table_name>'))
+
+snowflake.close_session()
+
+app = Dash(external_stylesheets=[dbc.themes.LUX])
 
 app.layout = html.Div([
     html.Div([
