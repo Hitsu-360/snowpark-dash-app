@@ -1,13 +1,14 @@
+from urllib import response
 from snowflake.snowpark import Session
 
 class SnowflakeHandler:
 
-    def init(self, connection_parameters):
+    def __init__(self, connection_parameters):
 
         self.session = Session.builder.configs(connection_parameters)
 
     def init_session(self):
-        self.session.create()
+        self.session = self.session.create()
 
     def close_session(self):
         self.session.close()
@@ -18,12 +19,30 @@ class SnowflakeHandler:
 
     def save_table_data(self, data, table_name, mode):
 
-        snowpark_dataframe = self.session.create_dataframe(data.to_dict('list'))
-
         try:
+
+            snowpark_dataframe = self.session.create_dataframe(data)
+            
             print(f'Saving data to table ({table_name}) with mode ({mode})')
-            snowpark_dataframe.write.mode(mode).save_as_table(table_name)
+            
+            status = snowpark_dataframe.write.mode(mode).save_as_table(table_name)
+
+            print(status)
+
+            return { 'status': 'success', 'message': 'Saved Successfully'}
+        
         except NameError: 
+            
             print(f'Exception: {NameError}')
+        
+            return { 'status': 'error', 'message': str(NameError)}
+        
+        except: 
+
+            return { 'status': 'error', 'message': 'Something went wrong'}
+
         finally:
+        
             print('Save Operation Finished')
+
+            
